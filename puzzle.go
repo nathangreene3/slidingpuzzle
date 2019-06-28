@@ -2,17 +2,12 @@ package slidingpuzzle
 
 import "math/rand"
 
-// Board ...
-type Board [][]int
-
-// Position ...
-type Position []int
-
 // Puzzle ...
 type Puzzle struct {
 	board        Board
 	pos, prevPos Position
 	rows, cols   int
+	entropy      float64
 }
 
 // NewPuzzle ...
@@ -58,6 +53,7 @@ func (pzl *Puzzle) slide(opt Position) {
 	pzl.board[opt[0]][opt[1]] = pzl.board[pzl.pos[0]][pzl.pos[1]]
 	pzl.board[pzl.pos[0]][pzl.pos[1]] = val
 	copy(pzl.pos, opt)
+	pzl.entropy = pzl.board.entropy()
 }
 
 // options ...
@@ -150,22 +146,22 @@ func (pzl *Puzzle) down() Position {
 	return Position{pzl.pos[0] + 1, pzl.pos[1]}
 }
 
-func (pos Position) compareTo(position Position) int {
+func (pzl *Puzzle) copy() *Puzzle {
+	p := &Puzzle{
+		board:   pzl.board.copy(),
+		pos:     pzl.pos.copy(),
+		prevPos: pzl.prevPos.copy(),
+	}
+	p.rows, p.cols = p.board.dimensions()
+	p.entropy = p.board.entropy()
+	return p
+}
+
+func (pzl *Puzzle) compareTo(p *Puzzle) int {
 	switch {
-	case pos == nil:
-		if position == nil {
-			return 0
-		}
-		return 1
-	case position == nil:
+	case pzl.entropy < p.entropy:
 		return -1
-	case pos[0] < position[0]:
-		return -1
-	case position[0] < pos[0]:
-		return 1
-	case pos[1] < position[1]:
-		return -1
-	case position[1] < pos[1]:
+	case p.entropy < pzl.entropy:
 		return 1
 	default:
 		return 0
